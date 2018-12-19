@@ -1,0 +1,141 @@
+<!--
+/********************************************************************
+*  Licensed Materials - Property of IBM 
+*
+*  5724-C07 
+*
+*  (c) Copyright IBM Corp.  2014 All Rights Reserved
+* 
+*  US Government Users Restricted Rights - Use, duplication or
+*  disclosure restricted by GSA ADP Schedule Contract with
+*  IBM Corp.
+*********************************************************************/
+-->
+
+<project name="cd-tenantmgmt" basedir="." default="build">
+
+	<taskdef resource="net/sf/antcontrib/antlib.xml" />
+
+	<target name="build">
+		<tstamp prefix="start" />
+		<property name="sb.build.id" value="sb-${start.DSTAMP}${start.TSTAMP}" />
+		<condition property="build.id" value="${buildLabel}" else="${sb.build.id}">
+			<and>
+				<isset property="buildLabel" />
+			</and>
+		</condition>
+		<property name="dir.obj.exclude-doclet" location="../obj/doclet" />
+		<property file="build.properties" />
+		<property name="consolidated.target.cd-tenantmgmt" value="all" />
+		<!--
+         - Determine our build arch
+         -->
+		<echo message="os.name: ${os.name}" />
+		<condition property="isWindows" value="true">
+			<os family="Windows" />
+		</condition>
+		<condition property="isMac" value="true">
+			<os family="mac" />
+		</condition>
+		<if>
+			<equals arg1="${isWindows}" arg2="true" />
+			<then>
+				<echo message="Build platform is Windows " />
+				<property name="eclipse.ws.platform" value="win32" />
+				<property name="arch" value="x86_nt_4" />
+			</then>
+			<elseif>
+				<equals arg1="${isMac}" arg2="true" />
+				<then>
+					<echo message="Build platform is Mac OS X " />
+					<property name="eclipse.ws.platform" value="cocoa" />
+					<property name="arch" value="x86_macosx_64" />
+				</then>
+			</elseif>
+			<else>
+				<echo message="Build platform is Linux" />
+				<property name="eclipse.ws.platform" value="gtk" />
+				<property name="arch" value="x86_linux_2" />
+			</else>
+		</if>
+
+		<antcall target="cd-tenantmgmt" />
+	</target>
+
+	<target name="clean">
+		<ant antfile="./build_tenantmgmt.xml" useNativeBasedir="true" target="clean" />
+	</target>
+
+	<target name="cd-tenantmgmt" if="${cd-tenantmgmt}" depends="build_nls">
+		<echo message="cd-tenantmgmt build target is: ${consolidated.target.cd-tenantmgmt}" />
+		<ant antfile="./build_tenantmgmt.xml" useNativeBasedir="true" target="${consolidated.target.cd-tenantmgmt}" />
+	</target>
+	
+	<target name="build_nls">
+			<!-- list of required jars in backingchain-aware classpath format for a tmsxml to properties file conversion. -->
+			<property name="root.tms_props_jars"      value="${root.tms_tools}/xalan_2.5.1.jar;${root.tms_tools}/xml-apis_2.5.0.jar;${root.tms_tools}/tmsutil.jar"/>
+			<property name="root.tms_jars_"           value="${root.tms_tools}/DTDDirResolver.jar"/>
+			<!-- The location of the main style sheet. -->
+			<property name="root.XSL_SPEC_SOURCE"     location="${root.tms_specs}"/>
+			<!-- TMS XML style sheet for the TMS XML to properties file conversion. -->
+			<property name="root.XSL_MSG_SOURCE"      location="${root.tms_tools}/propertiesResourceBundle.xsl"/>
+			<!-- Name of the tms xml java class to run for conversion to properties file -->
+			<property name="root.XML_TO_MSG_PROG"      value="org.apache.xalan.xslt.Process"/>
+			
+			<property name="NLS_LOC" location="${basedir}/resources/nls/" />
+			<property name="TMSXML_LOC" location="${basedir}/resources/tmsxml/" />
+			<property name="NLS_LOG_LOC" location="${basedir}/logs/nls" />
+		
+			<echoproperties/>
+		
+			<delete dir="${NLS_LOC}" />
+			<mkdir dir="${NLS_LOC}" />
+			<delete dir="${NLS_LOG_LOC}" />
+			<mkdir dir="${NLS_LOG_LOC}" />
+		
+			
+			<description>
+		    =========================================================================
+		      Macro:  convertTMSXMLToProperties
+
+		      Purpose:  Runs transform to convert a TMS XML file into an properties file.
+		    =========================================================================
+		  </description>
+			<macrodef name="convertTMSXMLToProperties">
+				<!-- The location and name of the input xml file. -->
+				<attribute name="tmsxmlfile.loc"/>
+				<!-- The location and name of the properties file to generate. -->
+				<attribute name="propsfile.loc"/>
+				<!-- The location and name of the ide file to generate log in. -->
+				<attribute name="logfile.log"/>
+
+				<sequential>
+					<echo>TMSXML FILE to PROPERTIES FILE started: @{tmsxmlfile.loc}</echo>
+					<exec executable="java" failonerror="yes" output="@{logfile.log}">
+						<arg line='-classpath "${root.tms_props_jars}" -DDTD_DIR="${root.XSL_SPEC_SOURCE}" -Xbootclasspath/p:"${root.tms_jars_}" "${root.XML_TO_MSG_PROG}" -in file:"@{tmsxmlfile.loc}" -xsl file:"${root.XSL_MSG_SOURCE}" -out "@{propsfile.loc}" -entityresolver DTDDirResolver -param preformat true -param doubleapos true -param varonly true '/>
+					</exec>
+					<echo>TMSXML FILE to PROPERTIES FILE successful: @{propsfile.loc}</echo>
+				</sequential>
+
+			</macrodef>
+			
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages.xml" propsfile.loc="${NLS_LOC}/TmMessages.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<!--
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_cs.xml" propsfile.loc="${NLS_LOC}/TmMessages_cs.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_de.xml" propsfile.loc="${NLS_LOC}/TmMessages_de.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_es.xml" propsfile.loc="${NLS_LOC}/TmMessages_es.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_fr.xml" propsfile.loc="${NLS_LOC}/TmMessages_fr.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_hu.xml" propsfile.loc="${NLS_LOC}/TmMessages_hu.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_it.xml" propsfile.loc="${NLS_LOC}/TmMessages_it.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_ja.xml" propsfile.loc="${NLS_LOC}/TmMessages_ja.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_ko.xml" propsfile.loc="${NLS_LOC}/TmMessages_ko.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_pl.xml" propsfile.loc="${NLS_LOC}/TmMessages_pl.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+    		<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_pt_BR.xml" propsfile.loc="${NLS_LOC}/TmMessages_pt_BR.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_ru.xml" propsfile.loc="${NLS_LOC}/TmMessages_ru.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_zh_CN.xml" propsfile.loc="${NLS_LOC}/TmMessages_zh_CN.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			<convertTMSXMLToProperties tmsxmlfile.loc="${TMSXML_LOC}/TmMessages_zh_TW.xml" propsfile.loc="${NLS_LOC}/TmMessages_zh_TW.properties" logfile.log="${NLS_LOG_LOC}/TmMessages.log"/>
+			-->
+			
+		</target>
+
+</project>

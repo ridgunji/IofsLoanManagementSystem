@@ -1,0 +1,99 @@
+<!--
+  -   Licensed Materials - Property of IBM
+  -
+  -   5724-C07
+  -
+  -   (c) Copyright IBM Corp.  2016 All Rights Reserved
+  -
+  -   US Government Users Restricted Rights - Use, duplication or
+  -   disclosure restricted by GSA ADP Schedule Contract with
+  -   IBM Corp.
+  -->
+
+<project name="cd-tenantmgmt" basedir="." default="all">
+
+<!--
+'ant -projecthelp' for a general description
+-->
+<description>
+</description>
+
+
+
+<import file="build-common.xml"/>
+
+<target name="clean" depends="__start__,__init__,clean-all,__end__"/>
+
+
+<!-- clean-all
+  - diretories from build.properties don't work well here as
+  - the basedir is different.  need to define some dirs just for this target
+  -->
+<target name="clean-all" description="Deletes the object/ship/lib directories">
+
+    <property name="dir.cd-tenantmgmt.obj" location="${dir.base}/obj/cd-tenantmgmt" />
+    <echo message="Deleting tenantmgmt directory ${dir.cd-tenantmgmt.obj}" />
+    <delete dir="${dir.cd-tenantmgmt.obj}" failonerror="false" />
+
+    <property name="dir.cd-tenantmgmt.ship" location="${dir.base}/ship/cd-tenantmgmt" />
+    <echo message="Deleting tenantmgmt directory ${dir.cd-tenantmgmt.ship}" />
+    <delete dir="${dir.cd-tenantmgmt.ship}" failonerror="false" />
+
+
+</target>
+
+<target name="all" depends="__start__,__init__,components,test-components,__end__"/>
+
+
+<target name="test-components" depends="test" if="${buildtest}" />
+
+<target name="components" depends="cd-tenantmgmt"/>
+
+<target name="__start__">
+   <tstamp>
+       <format property="start.time" pattern="yyyy/MM/dd HH:mm:ss:SSS" unit="hour"/>
+   </tstamp>
+   <echo message="cd-tenantmgmt build start time ${start.time}"/>
+</target>
+
+<target name="__end__">
+   <tstamp>
+       <format property="end.time" pattern="yyyy/MM/dd HH:mm:ss:SSS" unit="hour"/>
+   </tstamp>
+   <echo message="cd-tenantmgmt build start time ${start.time}"/>
+   <echo message="cd-tenantmgmt build end time   ${end.time}"/>
+
+</target>
+
+
+<!--
+/********************************************************************
+*  tenant mgmt utility jars
+*********************************************************************/
+-->
+<target name="utilities" />
+
+
+
+<!--
+/********************************************************************
+*  Platform app
+*********************************************************************/
+-->
+<target name="cd-tenantmgmt" depends="utilities, jars, wars, ear"/>
+
+
+<target name="jars" description="cd-tenantmgmt utility jars">
+</target>
+
+<target name="wars" depends="jars">
+    <builddirectory dir="${cd-tenantmgmt.build}" target="all" />
+</target>
+
+<target name="ear" >
+</target>
+
+<target name="test" >
+</target>
+
+</project>

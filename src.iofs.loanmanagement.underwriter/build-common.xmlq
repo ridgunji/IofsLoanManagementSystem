@@ -1,0 +1,66 @@
+<!--
+/********************************************************************
+*  Licensed Materials - Property of IBM
+*
+*  5724-C07
+*
+*  (c) Copyright IBM Corp.  2016 All Rights Reserved
+*
+*  US Government Users Restricted Rights - Use, duplication or
+*  disclosure restricted by GSA ADP Schedule Contract with
+*  IBM Corp.
+*********************************************************************/
+-->
+<project name="cd-tenantmgmt-common" basedir=".">
+<description>
+  Common build file to establish the build environment 
+</description>
+
+    <echo message="Loading environment. __alreadyEnv=${__alreadyEnv}" />
+    <target name="__env__" unless="__alreadyEnv">
+        <property name="__alreadyEnv" value="true" />
+
+
+        <!--
+         - Read environment variables 
+         -->
+        <property environment="envvariable." />
+
+        <!--
+         - Determine our build arch
+         -->
+        <echo message="os.name: ${os.name}" />
+
+       
+        <!--
+         - Load build property file in source tree
+         -->
+        <dirname property="cd-tenantmgmt-common.basedir" file="${ant.file.cd-tenantmgmt-common}" />
+        <property name="dir.base" location="${cd-tenantmgmt-common.basedir}" />
+        <property file="${cd-tenantmgmt-common.basedir}/build.properties" />
+        
+    </target>
+
+    <target name="__init__" depends="__env__,__macros__" unless="__alreadyInit">
+       <property name="cd-tenantmgmt.build.loaded" value="true" />
+    </target>
+
+
+    <target name="__macros__" depends="__env__">
+  
+        <echo message="Defining builddirectory macro" />
+        <macrodef name="builddirectory">
+            <attribute name="dir" description="Directory to build" />
+            <attribute name="target" description="Optional target to build, defaults to defaulttarget" default="${build.defaulttarget}" />
+            <attribute name="buildfile" description="Optional build filename to execute, defaults to build.xml" default="build.xml" />
+            <element name="properties" description="Optional properties to pass to ant" optional="true"/>
+            <sequential>
+                <ant dir="@{dir}" antfile="@{buildfile}" inheritAll="true" inheritRefs="true" target="@{target}">
+                    <property name="__alreadyInit" value="true" />
+                    <properties/>
+                </ant>
+            </sequential>
+        </macrodef>
+    </target>
+
+</project>
